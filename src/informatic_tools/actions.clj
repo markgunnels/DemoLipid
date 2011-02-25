@@ -1,0 +1,51 @@
+(ns informatic_tools.actions
+  (:require [informatic_tools.parse :as parse]
+            [informatic_tools.calculations :as calculations]
+            [clojure.string :as string]
+            (incanter.core)
+            [incanter.charts :as charts]))
+
+(defn add-result-to-results-collection
+  [results-name raw-input results-collection]
+  (assoc results-collection
+    results-name
+    (-> raw-input
+        (parse/split-and-filter-blanks)
+        (parse/resultize))))
+
+(defn add-sample-group-to-sample-group-map
+  [sample-group-name sample-identifiers sample-group-collection]
+  (assoc sample-group-collection
+    sample-group-name
+    (string/split sample-identifiers #",")))
+
+(defn calculate-t-test
+  [attribute sample-group-one-name sample-group-two-name sample-group-map results]
+  (let [sample-group-one-identifiers (sample-group-map sample-group-one-name)
+        sample-group-two-identifiers (sample-group-map sample-group-two-name)
+        sample-group-one (parse/extract-sample-group results
+                                                     (set sample-group-one-identifiers)
+                                                     "Sample ID")
+        sample-group-two (parse/extract-sample-group results
+                                                     (set sample-group-two-identifiers)
+                                                     "Sample ID")
+        sample-group-one-values (parse/measurement-values sample-group-one attribute)
+        sample-group-two-values (parse/measurement-values sample-group-two attribute)]
+    (println sample-group-two-identifiers)
+    (calculations/t-test sample-group-one-values
+                         sample-group-two-values)))
+
+(defn add-results
+  [results-name results results-map]
+  (let [r (add-result-to-results-collection results-name
+                                            (str  results)
+                                            results-map)]
+    [r (parse/combine-results-on-identifier "Sample ID"
+                                            (vals r))]))
+
+(defn get-bar-chart
+  [label-one value-one label-two value-two]
+  (let [bar-chart ()])
+  (-> (response/response (new java.io.ByteArrayInputStream (:data record)))
+      (response/content-type (:content-type (:content-type record)))
+      (response/header "Content-Length" (:size record))))
