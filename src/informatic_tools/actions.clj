@@ -3,7 +3,9 @@
             [informatic_tools.calculations :as calculations]
             [clojure.string :as string]
             (incanter.core)
-            [incanter.charts :as charts]))
+            [incanter.charts :as charts]
+            [incanter.stats :as stats]
+            [compojure.response :as response]))
 
 (defn add-result-to-results-collection
   [results-name raw-input results-collection]
@@ -31,9 +33,26 @@
                                                      "Sample ID")
         sample-group-one-values (parse/measurement-values sample-group-one attribute)
         sample-group-two-values (parse/measurement-values sample-group-two attribute)]
-    (println sample-group-two-identifiers)
     (calculations/t-test sample-group-one-values
                          sample-group-two-values)))
+
+(defn calculate-summary-statistics
+  [attribute sample-group-one-name sample-group-map results]
+  (let [sample-group-one-identifiers (sample-group-map sample-group-one-name)
+        sample-group-one (parse/extract-sample-group results
+                                                     (set sample-group-one-identifiers)
+                                                     "Sample ID")
+        sample-group-one-values (parse/measurement-values sample-group-one attribute)
+        q (stats/quantile sample-group-one-values)]
+
+    {:min (first q)
+     :twenty-fifth (second q)
+     :fiftieth (nth q 2)
+     :seventy-fifth (nth q 3)
+     :max (last q)
+     :mean (stats/mean q)
+     :median (stats/median q)
+     }))
 
 (defn add-results
   [results-name results results-map]
@@ -43,9 +62,26 @@
     [r (parse/combine-results-on-identifier "Sample ID"
                                             (vals r))]))
 
-(defn get-bar-chart
+(defn t-test-bar-chart
   [label-one value-one label-two value-two]
-  (let [bar-chart ()])
-  (-> (response/response (new java.io.ByteArrayInputStream (:data record)))
-      (response/content-type (:content-type (:content-type record)))
-      (response/header "Content-Length" (:size record))))
+  (let [c (charts/bar-chart [label-one label-two]
+                            (doall (map #(Double. %) [value-one value-two])) 
+                            :x-label "Species"
+                            :y-label "Moles")
+        out-stream (java.io.ByteArrayOutputStream.)]
+    (do
+      (incanter.core/save c out-stream)
+      (java.io.ByteArrayInputStream. (.toByteArray out-stream)))))
+
+(defn summary-statistics-box-plot
+  [attribute sample-group-one-name sample-group-map results]
+  (let [sample-group-one-identifiers (sample-group-map sample-group-one-name)
+        sample-group-one (parse/extract-sample-group results
+                                                     (set sample-group-one-identifiers)
+                                                     "Sample ID")
+        sample-group-one-values (parse/measurement-values sample-group-one attribute)
+        c (charts/box-plot sample-group-one-values)
+        out-stream (java.io.ByteArrayOutputStream.)]
+    (do
+      (incanter.core/save c out-stream)
+      (java.io.ByteArrayInputStream. (.toByteArray out-stream)))))

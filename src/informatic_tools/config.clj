@@ -10,8 +10,8 @@
 (def *project-couch*
      "http://sctrdev2-v.mdc.musc.edu:5984/projects")
 
-(def SITE-TITLE "INFORMATIC TOOLS")
-(def SITE-URL "http://localhost:8080")
+(def SITE-TITLE "INFORMATICS TOOLS")
+(def SITE-URL "http://localhost:3000")
 (def SITE-DESCRIPTION
      "Provides informatics tools for working with Lipidomics data.")
 

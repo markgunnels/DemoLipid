@@ -39,9 +39,33 @@
                                                           sample-group-one-name
                                                           sample-group-two-name
                                                           (session-get :sample-group-map)
-                                                          (session-get :results))))
+                                                          (session-get :results))
+                                sample-group-one-name
+                                sample-group-two-name))
+    (GET "/calculations/summary-statistics/new" []
+         (views/summary-statistics-form
+          (session-get :results)
+          (session-get :sample-group-map)))
+    (POST "/calculations/summary-statistics/" [sample-group-one-name
+                                               attribute]
+          (views/summary-statistics-results attribute
+                                            sample-group-one-name
+                                            (actions/calculate-summary-statistics
+                                             attribute
+                                             sample-group-one-name
+                                             (session-get :sample-group-map)
+                                             (session-get :results))))
+    (GET "/bar-chart"
+         [label-one value-one label-two value-two]
+         (actions/t-test-bar-chart label-one value-one label-two value-two))
+    (GET "/box-plot" [attribute sample-group-one-name]
+         (actions/summary-statistics-box-plot attribute sample-group-one-name
+                                              (session-get :sample-group-map)
+                                              (session-get :results)))
     (route/files "/public")
     (route/not-found "Page not found"))
+
+
 
 (def app (-> main-routes
              wrap-stateful-session

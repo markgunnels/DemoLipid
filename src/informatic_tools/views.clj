@@ -3,7 +3,8 @@
         (hiccup page-helpers form-helpers)
         (sandbar stateful-session))
   (:require [informatic_tools.config :as config]
-            [informatic_tools.parse :as parse]))
+            [informatic_tools.parse :as parse]
+            [clojure.string :as string]))
 
 (defn wrap-in-layout
   [title body message error]
@@ -28,7 +29,8 @@
       [:div#menubar
        (link-to "/results/new" "Add Results") "&nbsp;|&nbsp;"
        (link-to "/sample-groups/new" "Add Sample Group") "&nbsp;|&nbsp;"
-       (link-to "/calculations/t-test/new" "Perform T-Test")]
+       (link-to "/calculations/t-test/new" "Perform T-Test") "&nbsp;|&nbsp;"
+       (link-to "/calculations/summary-statistics/new" "Summary Statistics")]
       [:div#content
        [:div.content body]]]]
      ]]))
@@ -136,6 +138,30 @@
    nil
    nil))
 
+(defn summary-statistics-form
+  [results sample-group-map]
+  (wrap-in-layout
+   "Run T-Test"
+   [:div#form
+    (form-to [:post "/calculations/summary-statistics/"]
+             [:fieldset
+              [:legend "Summary Statistics" ]
+              [:ol
+               [:li
+                (label "sample-group-one-name" "Sample Group Name")
+                (drop-down "sample-group-one-name"
+                           (sort (keys sample-group-map)))]
+               [:li
+                (label "attribute"
+                       "Attribute") 
+                (drop-down "attribute"
+                           (sort (parse/list-attributes results
+                                                        "Sample ID")))]]]
+             
+             (submit-button "Run Summary Statistics"))]
+   nil
+   nil))
+
 (defn map-to-vertical-table
   [m]
   [:table
@@ -148,12 +174,38 @@
        (str (second pair))]]))])
 
 (defn t-test-results
-  [t-test-results]
+  [t-test-results
+   sample-group-one-name
+   sample-group-two-name]
   (println t-test-results)
   (wrap-in-layout
    "T-Test Results"
    [:div#t-test-results
-    (map-to-vertical-table t-test-results)]
+    [:div
+     (map-to-vertical-table t-test-results)]
+     [:div
+    (image (str "/bar-chart?" (string/join "&"
+                                           [(str "label-one=" sample-group-one-name)
+                                            (str "label-two=" sample-group-two-name) 
+                                            (str "value-one=" (:x-mean t-test-results))
+                                            (str "value-two=" (:y-mean t-test-results))])))]]
+   
+   nil
+   nil))
+
+(defn summary-statistics-results
+  [attribute
+   sample-group-one-name
+   summary-statistics-results]
+  (wrap-in-layout
+   "Summary Statistics Results"
+   [:div#summary-statistics-results
+    [:div
+     (map-to-vertical-table summary-statistics-results)]
+    [:div
+     (image (str "/box-plot?" (string/join "&"
+                                           [(str "sample-group-one-name=" sample-group-one-name)
+                                            (str "attribute=" attribute)])))]]
    nil
    nil))
 
